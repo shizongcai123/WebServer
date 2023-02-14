@@ -46,7 +46,7 @@ public:
     //超时时间
     time_t expire;
     //回调函数:从内核事件表删除事件，关闭文件描述符，释放连接资源
-    void (* cb_func)(client_data *);
+    void (* cb_func)(client_data *)
     //连接资源
     client_data *user_data;
     //前向定时器
@@ -69,7 +69,7 @@ public:
     void adjust_timer(util_timer *timer);
     //删除定时器
     void del_timer(util_timer *timer);
-    //定时任务处理函数
+    //定时任务处理函数，从head开始，删除定时器过期的util_timer.
     void tick();
 
 private:
@@ -112,7 +112,7 @@ public:
     static int u_epollfd;//epollfd
     int m_TIMESLOT;//最小时间间隙
 };
-
+//在tick()使用。当timer过期时，调用timer自身的cb_func去关闭client_data，然后删除timer.
 void cb_func(client_data *user_data);
 
 #endif
