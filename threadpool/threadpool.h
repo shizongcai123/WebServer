@@ -47,7 +47,7 @@ threadpool<T>::threadpool( int actor_model, connection_pool *connPool, int threa
     {
         //函数原型中的第三个参数，为函数指针，指向处理线程函数的地址。
         //若线程函数为类成员函数，
-        //则this指针会作为默认的参数被传进函数中，从而和线程函数参数(void*)不能匹配，不能通过编译。
+        //则this指针会作为默认的参数被传进函数中，从而和线程函数参数(void*)不能匹配，不能通过编译。//第四个参数必须是void*类型
         //静态成员函数就没有这个问题，因为里面没有this指针。
         if (pthread_create(m_threads + i, NULL, worker, this) != 0)
         {

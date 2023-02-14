@@ -19,7 +19,7 @@ map<string, string> users;
 
 int http_conn::m_user_count = 0;
 int http_conn::m_epollfd = -1;
-
+//初始化数据库读取表
 void http_conn::initmysql_result(connection_pool *connPool)
 {
     //先从连接池中取一个连接

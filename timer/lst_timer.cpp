@@ -35,14 +35,14 @@ void sort_timer_lst::add_timer(util_timer *timer)
     //定时器中是按照expire从小到大排序
     //如果新的定时器超时时间小于当前头部结点
     //直接将当前定时器结点作为头部结点
-    if (timer->expire < head->expire)
+    if (timer->expire < head->expire)//当加入timer是最小时，直接加到链表头部，不走add_timer()
     {
         timer->next = head;
         head->prev = timer;
         head = timer;
         return;
     }
-    add_timer(timer, head);
+    add_timer(timer, head);//如何在升序链表中加入timer
 }
 
 //调整定时器，任务发生变化时，调整定时器在链表中的位置

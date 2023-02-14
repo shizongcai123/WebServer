@@ -120,7 +120,7 @@ void WebServer::eventListen()
     if (0 == m_OPT_LINGER)
     {
         struct linger tmp = {0, 1};
-        setsockopt(m_listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
+        setsockopt(m_listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));//设置socket配置
     }
     else if (1 == m_OPT_LINGER)
     {
@@ -154,7 +154,7 @@ void WebServer::eventListen()
     utils.addfd(m_epollfd, m_listenfd, false, m_LISTENTrigmode);
     http_conn::m_epollfd = m_epollfd;
 
-    //socketpair()函数用于创建一对无名的、相互连接的套接子。
+    //socketpair()函数用于创建一对无名的、相互连接的套接子。socketpair用来作为信号传输通道
     //详情：https://blog.csdn.net/weixin_40039738/article/details/81095013
     ret = socketpair(PF_UNIX, SOCK_STREAM, 0, m_pipefd);
     assert(ret != -1);
@@ -172,7 +172,7 @@ void WebServer::eventListen()
     Utils::u_epollfd = m_epollfd;
 }
 
-//创建一个定时器节点，将连接信息挂载
+//创建一个定时器节点，同时将对应http_conn连接信息挂载
 void WebServer::timer(int connfd, struct sockaddr_in client_address)
 {
     users[connfd].init(connfd, client_address, m_root, m_CONNTrigmode, m_close_log, m_user, m_passWord, m_databaseName);
@@ -182,7 +182,7 @@ void WebServer::timer(int connfd, struct sockaddr_in client_address)
     users_timer[connfd].address = client_address;
     users_timer[connfd].sockfd = connfd;
     util_timer *timer = new util_timer;
-    timer->user_data = &users_timer[connfd];
+    timer->user_data = &users_timer[connfd];//users_timer[connfd]表示new出来的真实存储地址。user_timer表示指向首地址的指针。
     timer->cb_func = cb_func;
     time_t cur = time(NULL);
     //TIMESLOT:最小时间间隔单位为5s
@@ -323,8 +323,8 @@ void WebServer::dealwithread(int sockfd)
         }
 
         //若监测到读事件，将该事件放入请求队列
-        m_pool->append(users + sockfd, 0);
-        while (true)
+        m_pool->append(users + sockfd, 0);//users一直都是数组的首指针，+sockfd后，就是users[sockfd]
+        while (true)//若该httpconn没有被处理，则一直阻塞直到进入process处理，此时就可将improv置0
         {
             //是否正在处理中
             if (1 == users[sockfd].improv)
@@ -418,6 +418,7 @@ void WebServer::eventLoop()
     {
         //等待所监控文件描述符上有事件的产生
         int number = epoll_wait(m_epollfd, events, MAX_EVENT_NUMBER, -1);
+        //m_epooldf监听的socket最大数量是5个，但是事件并不只有5个，可能一个socketfd有触发多个事件。
         //EINTR错误的产生：当阻塞于某个慢系统调用的一个进程捕获某个信号且相应信号处理函数返回时，该系统调用可能返回一个EINTR错误。
         //例如：在socket服务器端，设置了信号捕获机制，有子进程，
         //当在父进程阻塞于慢系统调用时由父进程捕获到了一个有效信号时，内核会致使accept返回一个EINTR错误(被中断的系统调用)。
@@ -435,7 +436,7 @@ void WebServer::eventLoop()
             //处理新到的客户连接
             if (sockfd == m_listenfd)
             {
-                bool flag = dealclinetdata();
+                bool flag = dealclinetdata();//listenfd是指的端口，表明有对端口的读写，表明建立的连接。然后进入dealclinetdata函数处理http连接，这时又有confd，就表明是这个端口上的那个连接。
                 if (false == flag)
                     continue;
             }

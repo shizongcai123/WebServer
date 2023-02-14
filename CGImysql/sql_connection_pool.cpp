@@ -131,9 +131,12 @@ connection_pool::~connection_pool()
 	DestroyPool();
 }
 
+//外部通过connectionRAII分配数据库链接对象
+//例如：
+// MYSQL *mysql = NULL;
+// connectionRAII mysqlcon(&mysql, connPool);将申请到的数据库链接返回给mysql。
 connectionRAII::connectionRAII(MYSQL **SQL, connection_pool *connPool){
 	*SQL = connPool->GetConnection();
-	
 	conRAII = *SQL;
 	poolRAII = connPool;
 }
