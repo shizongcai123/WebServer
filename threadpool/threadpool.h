@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include "../lock/locker.h"
 #include "../CGImysql/sql_connection_pool.h"
-
+#include <thread>
 template <typename T>
 class threadpool
 {
@@ -26,7 +26,7 @@ private:
 private:
     int m_thread_number;        //线程池中的线程数
     int m_max_requests;         //请求队列中允许的最大请求数
-    pthread_t *m_threads;       //描述线程池的数组，其大小为m_thread_number
+    std::thread *m_threads;       //描述线程池的数组，其大小为m_thread_number
     std::list<T *> m_workqueue; //请求队列
     locker m_queuelocker;       //保护请求队列的互斥锁
     sem m_queuestat;            //是否有任务需要处理
@@ -36,11 +36,12 @@ private:
 
 template <typename T>
 //线程池构造函数
-threadpool<T>::threadpool( int actor_model, connection_pool *connPool, int thread_number, int max_requests) : m_actor_model(actor_model),m_thread_number(thread_number), m_max_requests(max_requests), m_threads(NULL),m_connPool(connPool)
+threadpool<T>::threadpool( int actor_model, connection_pool *connPool, int thread_number, int max_requests) :
+    m_actor_model(actor_model),m_thread_number(thread_number), m_max_requests(max_requests), m_threads(NULL),m_connPool(connPool)
 {
     if (thread_number <= 0 || max_requests <= 0)
         throw std::exception();
-    m_threads = new pthread_t[m_thread_number];     //pthread_t是长整型
+    m_threads = new std::thread[m_thread_number];     //pthread_t是长整型
     if (!m_threads)
         throw std::exception();
     for (int i = 0; i < thread_number; ++i)
@@ -103,6 +104,8 @@ bool threadpool<T>::append_p(T *request)
 }
 
 //工作线程:pthread_create时就调用了它
+//相当于线程池里的所有线程都在run这个worker函数，同时所有正在run的worker函数又会去获取共有的m_workqueue
+//从workqueue中获取待处理的http_conn, 以此来实现对外来任务的并行处理
 template <typename T>
 void *threadpool<T>::worker(void *arg)
 {
