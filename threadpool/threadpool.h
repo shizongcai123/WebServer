@@ -50,17 +50,9 @@ threadpool<T>::threadpool( int actor_model, connection_pool *connPool, int threa
         //若线程函数为类成员函数，
         //则this指针会作为默认的参数被传进函数中，从而和线程函数参数(void*)不能匹配，不能通过编译。//第四个参数必须是void*类型
         //静态成员函数就没有这个问题，因为里面没有this指针。
-        if (pthread_create(m_threads + i, NULL, worker, this) != 0)
-        {
-            delete[] m_threads;
-            throw std::exception();
-        }
+        m_threads = std::thread(worker);
         //主要是将线程属性更改为unjoinable，使得主线程分离,便于资源的释放，详见PS
-        if (pthread_detach(m_threads[i]))
-        {
-            delete[] m_threads;
-            throw std::exception();
-        }
+        m_threads->detach();
     }
 }
 template <typename T>
